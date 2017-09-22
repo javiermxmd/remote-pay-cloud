@@ -1,26 +1,13 @@
-import sdk = require('remote-pay-cloud-api');
 import http = require('http');
 
-import {RemoteMessageParser} from '../../../../json/RemoteMessageParser';
 import {HttpSupport} from '../../../../util/HttpSupport';
 import {Endpoints} from '../../../../util/Endpoints';
 import {DeviceContactInfo} from '../../../../util/DeviceContactInfo';
 
 import {WebSocketState} from '../../../../websocket/WebSocketState';
-
-import {PairingDeviceConfiguration} from '../PairingDeviceConfiguration';
-import {CloverDeviceConfiguration} from '../../device/CloverDeviceConfiguration';
-import {CloverDevice} from '../../device/CloverDevice';
 import {CloverWebSocketClient} from './CloverWebSocketClient';
 
-import {CloverTransport} from '../CloverTransport';
-import {Logger} from '../../util/Logger';
-import {CloverWebSocketClientListener} from "./CloverWebSocketClientListener";
 import {WebSocketCloverTransport} from "./WebSocketCloverTransport";
-
-import {CloverTransportObserver} from '../CloverTransportObserver';
-import {WebSocketCloverDeviceConfiguration} from "../../device/WebSocketCloverDeviceConfiguration";
-
 
 /**
  * WebSocket Cloud Clover Transport.  This handles the need to notify the device before a connection attempt is made.
@@ -98,19 +85,18 @@ export class WebSocketCloudCloverTransport extends WebSocketCloverTransport {
      * false to allow another reconnect attempt to be started by a separate 'thread'.
 	 */
 	protected initialize(): void {
-
 		// Do the notification call.  This needs to happen every time we attempt to connect.
         // It COULD mean that the device gets a notification when the Cloud Pay Display is
         // already running, but this is not harmful.
         let alertEndpoint:string = Endpoints.getAlertDeviceEndpoint(this.cloverServer, this.merchantId, this.accessToken);
         let deviceContactInfo:DeviceContactInfo = new DeviceContactInfo(this.deviceId.replace(/-/g, ""), true);
 		this.httpSupport.postData(alertEndpoint,
-            function(data) { this.deviceNotificationSent(data);}.bind(this),
-            function(error) {
-                this.connectionError(this.webSocket, "Error sending alert to device." + error);
+            (data) => this.deviceNotificationSent(data),
+            (error) => {
+                this.connectionError(this.webSocket, `Error sending alert to device. Details: ${error.message}`);
                 // This may end a reconnect attempt
                 this.setReconnecting(false);
-            }.bind(this),
+            },
             deviceContactInfo);
 	}
 
